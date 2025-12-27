@@ -32,9 +32,9 @@ CREATE TABLE Silver.crm_sales_details (
     sls_ord_num VARCHAR(50),
     sls_prd_key VARCHAR(50),
     sls_cust_id INT,
-    sls_order_dt INT,
-    sls_ship_dt INT,
-    sls_due_dt INT,
+    sls_order_dt DATE,
+    sls_ship_dt DATE,
+    sls_due_dt DATE,
     sls_sales INT,
     sls_quantity INT,
     sls_price INT,
@@ -348,7 +348,17 @@ WHERE TRIM(prd_nm) <> prd_nm;
 
 
 -- =================================== crm_sales_details ===========================================
-
+INSERT INTO Silver.crm_sales_details(
+    sls_ord_num,
+    sls_prd_key,
+    sls_cust_id,
+    sls_order_dt,
+    sls_ship_dt,
+    sls_due_dt,
+    sls_sales,
+    sls_quantity,
+    sls_price
+)
  SELECT
     sls_ord_num,
     sls_prd_key,
@@ -379,9 +389,8 @@ WHERE TRIM(prd_nm) <> prd_nm;
         WHEN sls_price IS NULL OR sls_price <= 0 
         THEN sls_sales / NULLIF(sls_quantity, 0)
         ELSE sls_price
-    END AS sls_price,
-    dwh_create_date
-FROM Silver.crm_sales_details;
+    END AS sls_price
+FROM Bronze.crm_sales_details;
 
 -- ======================================= erp_cust_az12 =========================================
 
@@ -431,7 +440,11 @@ SET
     END;
 
 
--- ============================= loc_a101 ============================================================
+-- ============================= erp_loc_a101 ============================================================
+
+
+UPDATE Bronze.erp_loc_a101
+SET cntry = NULLIF(REGEXP_REPLACE(cntry, '[^A-Za-z]', ''),'');
 
 TRUNCATE TABLE Silver.erp_loc_a101;
 INSERT INTO Silver.erp_loc_a101 (cid, cntry)
@@ -445,5 +458,41 @@ CASE
 END AS cntry
 FROM Bronze.erp_loc_a101;
 
-UPDATE Silver.erp_loc_a101
-SET cntry = NULLIF(REGEXP_REPLACE(cntry, '[^A-Za-z]', ''),'');
+-- ============================== erp_px_cat_g1v2 ==================================================
+
+DROP TABLE IF EXISTS Silver.erp_px_cat_g1v2;
+CREATE TABLE Silver.erp_px_cat_g1v2 (
+    id VARCHAR(50),
+    cat VARCHAR(50),
+    subcat VARCHAR(50),
+    maintenance VARCHAR(50),
+    dwh_create_date DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO Silver.erp_px_cat_g1v2(
+    id,
+    cat,
+    subcat,
+    maintenance
+)
+
+SELECT 
+id,
+cat,
+subcat,
+maintenance
+FROM Bronze.erp_px_cat_g1v2;
+
+UPDATE Bronze.erp_px_cat_g1v2
+SET cat = NULLIF(REGEXP_REPLACE(cat, '[^A-Za-z]', ''),'');
+
+UPDATE Bronze.erp_px_cat_g1v2
+SET subcat = NULLIF(REGEXP_REPLACE(subcat, '[^A-Za-z]', ''),'');
+
+UPDATE Bronze.erp_px_cat_g1v2
+SET maintenance = NULLIF(REGEXP_REPLACE(maintenance, '[^A-Za-z]', ''),'');
+
+UPDATE Bronze.erp_px_cat_g1v2
+SET maintenance = NULLIF(REGEXP_REPLACE(maintenance, '[^A-Za-z]', ''),'');
+
+-- All Silver layer tables are clean, structured and properly maintained.
