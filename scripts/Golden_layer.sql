@@ -1,26 +1,32 @@
 
 -- ========================================== CUSTOMER ==============================================
 
-CREATE VIEW Gold.dim_customers AS 
+DROP VIEW IF EXISTS Gold.dim_customers;
+
+CREATE VIEW Gold.dim_customers AS
 SELECT 
-    ROW_NUMBER() OVER(ORDER BY cst_id) AS customer_key,
+    ROW_NUMBER() OVER (ORDER BY ci.cst_id) AS customer_key,
     ci.cst_id AS customer_id,
     ci.cst_key AS customer_number,
     ci.cst_firstname AS first_name,
     ci.cst_lastname AS last_name,
-    la.cntry AS country,
+   CASE 
+        WHEN la.cntry IS NULL OR TRIM(la.cntry) = '' THEN 'n/a'
+        ELSE la.cntry
+    END AS country,
     ci.cst_marital_status AS marital_status,
     CASE 
-        WHEN ci.cst_gndr != 'n/a' THEN ci.cst_gndr
+        WHEN ci.cst_gndr <> 'n/a' THEN ci.cst_gndr
         ELSE COALESCE(ce.gen, 'n/a')
     END AS gender,
     ce.bdate AS birthdate,
     ci.cst_create_date AS created_date
-FROM Silver.crm_cust_info AS ci 
-LEFT JOIN Silver.erp_cust_az12 AS ce 
-ON ci.cst_key = ce.cid
-LEFT JOIN Silver.erp_loc_a101 AS la 
-ON ci.cst_key = la.cid;
+FROM Silver.crm_cust_info AS ci
+LEFT JOIN Silver.erp_cust_az12 AS ce
+    ON ci.cst_key = ce.cid
+LEFT JOIN Silver.erp_loc_a101 AS la
+    ON ci.cst_key = la.cid;
+
 
 --  We have 2 columns for gender so here we are merging into one. So CRM is superior so first if we have Male or Female in crm then we will consider that otherwise we will look into erp else we will put n/a. 
 SELECT DISTINCT
@@ -42,6 +48,7 @@ SELECT DISTINCT gender from Gold.dim_customers;
 
 
 -- ========================================== PRODUCT ==============================================
+DROP VIEW IF EXISTS Gold.dim_products;
 CREATE VIEW Gold.dim_products AS
 SELECT
     ROW_NUMBER() OVER(ORDER BY pr.prd_start_dt, pr.prd_key) AS product_key,
@@ -78,3 +85,11 @@ LEFT JOIN gold.dim_products pr
     ON sd.sls_prd_key = pr.product_number
 LEFT JOIN gold.dim_customers cu
     ON sd.sls_cust_id = cu.customer_id;
+
+-- EDA
+
+SELECT DISTINCT country FROM Gold.dim_customers;
+
+SELECT DISTINCT category FROM Gold.dim_products; 
+
+SELECT DISTINCT category, subcategory FROM Gold.dim_products ORDER BY category;

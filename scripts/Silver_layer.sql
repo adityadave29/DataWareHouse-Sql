@@ -452,7 +452,8 @@ SELECT
 REPLACE (cid, '-','') cid,
 CASE 
     WHEN TRIM(cntry) = 'DE' THEN 'Germany'
-    WHEN TRIM(cntry) IN ('US', 'USA') THEN 'United States'
+    WHEN TRIM(cntry) IN ('US', 'USA','UnitedStates') THEN 'United States'
+    WHEN TRIM(cntry) IN ('UnitedKingdom') THEN 'United Kingdom'
     WHEN TRIM(cntry) = '' OR cntry IS NULL THEN 'n/a'
     ELSE TRIM(cntry)
 END AS cntry
@@ -478,7 +479,10 @@ INSERT INTO Silver.erp_px_cat_g1v2(
 
 SELECT 
 id,
-cat,
+CASE 
+    WHEN TRIM(cat) IS NULL THEN 'n/a'
+    ELSE TRIM(cat)
+END AS cat,
 subcat,
 maintenance
 FROM Bronze.erp_px_cat_g1v2;
