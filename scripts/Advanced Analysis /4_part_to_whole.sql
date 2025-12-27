@@ -1,0 +1,18 @@
+-- how individual part is performing.
+
+
+WITH category_sales AS(
+SELECT 
+category,
+SUM(sales_amount) AS total_sales
+FROM Gold.fact_sales AS f 
+LEFT JOIN Gold.dim_products AS p 
+ON f.product_key = p.product_key
+GROUP BY category)
+
+SELECT 
+category,
+total_sales,
+SUM(total_sales) OVER() overall_sales,
+CONCAT(ROUND((CAST(total_sales AS FLOAT) / SUM(total_sales) OVER())*100 ,2 ),'%')AS percentage_of_total
+FROM category_sales;
